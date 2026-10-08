@@ -22,37 +22,40 @@ jobs:
         with:
           node-version: 18
 
-      - name: Generate and Duplicate 5k Links
+      - name: Generate 5,000 Pages
         run: |
           node -e '
           const fs = require("fs");
-          
+
+          // Read the base template
           const template = fs.readFileSync("template.html", "utf8");
+
+          // Prepare output directory
           fs.mkdirSync("dist", { recursive: true });
 
           let masterLinksHtml = "";
-          const TOTAL = 5000;
+          const TOTAL_PAGES = 5000;
 
-          for (let i = 1; i <= TOTAL; i++) {
+          // Create site1 through site5000
+          for (let i = 1; i <= TOTAL_PAGES; i++) {
             const slug = `site${i}`;
-            const targetUrl = `https://example.com/target-${i}`; // Change to your destination pattern
-
             const folderPath = `dist/${slug}`;
             fs.mkdirSync(folderPath, { recursive: true });
 
-            const customizedHtml = template.replace(/__TARGET_URL__/g, targetUrl);
-            fs.writeFileSync(`${folderPath}/index.html`, customizedHtml);
+            // Write the exact same template to each folder
+            fs.writeFileSync(`${folderPath}/index.html`, template);
 
             masterLinksHtml += `<li><a href="./${slug}/">${slug}</a></li>\n`;
           }
 
+          // Generate directory index page
           const masterIndexHtml = `<!DOCTYPE html>
           <html>
           <head>
             <meta charset="UTF-8">
-            <title>Link Registry (5,000 Links)</title>
+            <title>All 5,000 Sites</title>
             <style>
-              body { font-family: sans-serif; padding: 30px; background: #fafafa; }
+              body { font-family: sans-serif; padding: 30px; }
               ul { column-count: 4; column-gap: 20px; list-style: none; padding: 0; }
               li { margin: 4px 0; }
               a { color: #0366d6; text-decoration: none; font-size: 14px; }
@@ -60,7 +63,7 @@ jobs:
             </style>
           </head>
           <body>
-            <h1>All Generated Mirror Links (5,000)</h1>
+            <h1>Generated Sites (1 to 5,000)</h1>
             <ul>${masterLinksHtml}</ul>
           </body>
           </html>`;
