@@ -22,48 +22,45 @@ jobs:
         with:
           node-version: 18
 
-      - name: Duplicate Template 5k Times
+      - name: Generate and Duplicate 5k Links
         run: |
           node -e '
           const fs = require("fs");
           
-          // 1. Read master template and data list
           const template = fs.readFileSync("template.html", "utf8");
-          const links = JSON.parse(fs.readFileSync("links.json", "utf8"));
-          
-          // Create deployment build directory
           fs.mkdirSync("dist", { recursive: true });
 
           let masterLinksHtml = "";
+          const TOTAL = 5000;
 
-          // 2. Loop, duplicate, and swap placeholders
-          links.forEach(item => {
-            const folderPath = `dist/${item.slug}`;
+          for (let i = 1; i <= TOTAL; i++) {
+            const slug = `site${i}`;
+            const targetUrl = `https://example.com/target-${i}`; // Change to your destination pattern
+
+            const folderPath = `dist/${slug}`;
             fs.mkdirSync(folderPath, { recursive: true });
 
-            const customizedHtml = template.replace(/__TARGET_URL__/g, item.url);
+            const customizedHtml = template.replace(/__TARGET_URL__/g, targetUrl);
             fs.writeFileSync(`${folderPath}/index.html`, customizedHtml);
-            
-            masterLinksHtml += `<li><a href="./${item.slug}/">${item.slug}</a></li>\n`;
-          });
 
-          // 3. Create a clean root index.html to navigate between them
+            masterLinksHtml += `<li><a href="./${slug}/">${slug}</a></li>\n`;
+          }
+
           const masterIndexHtml = `<!DOCTYPE html>
           <html>
           <head>
             <meta charset="UTF-8">
-            <title>Link Registry</title>
+            <title>Link Registry (5,000 Links)</title>
             <style>
-              body { font-family: sans-serif; padding: 40px; background: #f4f4f9; color: #333; }
-              h1 { color: #111; }
-              ul { list-style-type: none; padding: 0; }
-              li { margin: 10px 0; }
-              a { color: #0066cc; text-decoration: none; font-size: 18px; }
+              body { font-family: sans-serif; padding: 30px; background: #fafafa; }
+              ul { column-count: 4; column-gap: 20px; list-style: none; padding: 0; }
+              li { margin: 4px 0; }
+              a { color: #0366d6; text-decoration: none; font-size: 14px; }
               a:hover { text-decoration: underline; }
             </style>
           </head>
           <body>
-            <h1>All Generated Mirror Links</h1>
+            <h1>All Generated Mirror Links (5,000)</h1>
             <ul>${masterLinksHtml}</ul>
           </body>
           </html>`;
