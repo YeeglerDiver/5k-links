@@ -22,11 +22,10 @@ jobs:
         with:
           node-version: 18
 
-      - name: Generate 5,000 Random Pages
+      - name: Generate 5,000 Nested Random Pages
         run: |
           node -e '
           const fs = require("fs");
-          const crypto = require("crypto");
 
           const template = fs.readFileSync("template.html", "utf8");
           fs.mkdirSync("dist", { recursive: true });
@@ -34,31 +33,42 @@ jobs:
           const TOTAL_PAGES = 5000;
           const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
 
-          // Helper to create a random string of a random length (between min and max)
-          function getRandomSlug(minLen = 6, maxLen = 14) {
+          // Generates a single segment of random characters
+          function getRandomSegment(minLen = 4, maxLen = 10) {
             const length = Math.floor(Math.random() * (maxLen - minLen + 1)) + minLen;
-            let slug = "";
+            let segment = "";
             for (let i = 0; i < length; i++) {
-              slug += chars.charAt(Math.floor(Math.random() * chars.length));
+              segment += chars.charAt(Math.floor(Math.random() * chars.length));
             }
-            return slug;
+            return segment;
           }
 
-          // Ensure all slugs are unique using a Set
-          const uniqueSlugs = new Set();
-          while (uniqueSlugs.size < TOTAL_PAGES) {
-            uniqueSlugs.add(getRandomSlug(6, 14));
+          // Generates a nested path like seg1/seg2 or seg1/seg2/seg3 (2 to 4 segments)
+          function getNestedPath(minSegments = 2, maxSegments = 4) {
+            const depth = Math.floor(Math.random() * (maxSegments - minSegments + 1)) + minSegments;
+            const segments = [];
+            for (let i = 0; i < depth; i++) {
+              segments.push(getRandomSegment(4, 10));
+            }
+            return segments.join("/");
+          }
+
+          // Ensure 5,000 unique paths
+          const uniquePaths = new Set();
+          while (uniquePaths.size < TOTAL_PAGES) {
+            uniquePaths.add(getNestedPath(2, 4));
           }
 
           let masterLinksHtml = "";
 
-          for (const slug of uniqueSlugs) {
-            const folderPath = `dist/${slug}`;
+          for (const nestedPath of uniquePaths) {
+            const folderPath = `dist/${nestedPath}`;
+            // recursive: true handles all nested subdirectories
             fs.mkdirSync(folderPath, { recursive: true });
 
             fs.writeFileSync(`${folderPath}/index.html`, template);
 
-            masterLinksHtml += `<a class="card" href="./${slug}/">${slug}</a>\n`;
+            masterLinksHtml += `<a class="card" href="./${nestedPath}/">${nestedPath}</a>\n`;
           }
 
           const masterIndexHtml = `<!DOCTYPE html>
@@ -81,7 +91,7 @@ jobs:
               header {
                 text-align: center;
                 margin-bottom: 28px;
-                max-width: 600px;
+                max-width: 650px;
                 width: 100%;
               }
               h1 {
@@ -112,10 +122,10 @@ jobs:
               }
               .grid {
                 display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
                 gap: 10px;
                 width: 100%;
-                max-width: 1200px;
+                max-width: 1300px;
               }
               .card {
                 display: flex;
@@ -124,11 +134,13 @@ jobs:
                 background: #161b22;
                 border: 1px solid #30363d;
                 border-radius: 6px;
-                padding: 10px;
+                padding: 12px;
                 color: #58a6ff;
                 text-decoration: none;
-                font-size: 13px;
+                font-size: 12px;
                 font-family: monospace;
+                word-break: break-all;
+                text-align: center;
                 transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
               }
               .card:hover {
@@ -145,7 +157,7 @@ jobs:
           <body>
             <header>
               <h1>Directory Index</h1>
-              <p>5,000 Randomized Pages</p>
+              <p>5,000 Nested Random Paths</p>
               <input type="text" id="filter" class="search-box" placeholder="Quick find path..." autocomplete="off" />
             </header>
 
