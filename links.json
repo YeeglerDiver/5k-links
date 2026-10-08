@@ -1,0 +1,10 @@
+[
+  {
+    "slug": "site1",
+    "url": "https://example1.com"
+  },
+  {
+    "slug": "site2",
+    "url": "https://example2.com"
+  }
+]
