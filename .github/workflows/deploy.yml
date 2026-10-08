@@ -4,15 +4,18 @@ on:
   push:
     branches:
       - main
-
-permissions:
-  contents: write
-  pages: write
-  id-token: write
+  workflow_dispatch: # Allows you to manually trigger this run from the Actions tab
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    
+    # Fixes the authentication failure by explicitly granting write access to the runner
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -54,7 +57,18 @@ jobs:
           // 3. Create a clean root index.html to navigate between them
           const masterIndexHtml = `<!DOCTYPE html>
           <html>
-          <head><title>Link Registry</title></head>
+          <head>
+            <meta charset="UTF-8">
+            <title>Link Registry</title>
+            <style>
+              body { font-family: sans-serif; padding: 40px; background: #f4f4f9; color: #333; }
+              h1 { color: #111; }
+              ul { list-style-type: none; padding: 0; }
+              li { margin: 10px 0; }
+              a { color: #0066cc; text-decoration: none; font-size: 18px; }
+              a:hover { text-decoration: underline; }
+            </style>
+          </head>
           <body>
             <h1>All Generated Mirror Links</h1>
             <ul>${masterLinksHtml}</ul>
