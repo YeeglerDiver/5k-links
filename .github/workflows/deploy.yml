@@ -1,0 +1,71 @@
+name: Duplicate Template Deployer
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Duplicate Template 5k Times
+        run: |
+          node -e '
+          const fs = require("fs");
+          
+          // 1. Read your master template and data list
+          const template = fs.readFileSync("template.html", "utf8");
+          const links = JSON.parse(fs.readFileSync("links.json", "utf8"));
+          
+          // Create a temporary deployment build directory
+          fs.mkdirSync("dist", { recursive: true });
+
+          let masterLinksHtml = "";
+
+          // 2. Loop, duplicate, and swap placeholders
+          links.forEach(item => {
+            const folderPath = `dist/${item.slug}`;
+            fs.mkdirSync(folderPath, { recursive: true });
+
+            // Replace all instances of the placeholder with the actual URL
+            const customizedHtml = template.replace(/__TARGET_URL__/g, item.url);
+
+            // Write it out as the index.html for this specific folder
+            fs.writeFileSync(`${folderPath}/index.html`, customizedHtml);
+            
+            // Add to the root landing page list
+            masterLinksHtml += `<li><a href="./${item.slug}/">${item.slug}</a></li>\n`;
+          });
+
+          // 3. Create a clean root index.html to navigate between them
+          const masterIndexHtml = `<!DOCTYPE html>
+          <html>
+          <head><title>Link Registry</title></head>
+          <body>
+            <h1>All Generated Mirror Links</h1>
+            <ul>${masterLinksHtml}</ul>
+          </body>
+          </html>`;
+
+          fs.writeFileSync("dist/index.html", masterIndexHtml);
+          '
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: \${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
