@@ -6,14 +6,12 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    
-    permissions:
-      contents: write
-      pages: write
-      id-token: write
 
     steps:
       - name: Checkout Repository
@@ -29,11 +27,11 @@ jobs:
           node -e '
           const fs = require("fs");
           
-          // 1. Read your master template and data list
+          // 1. Read master template and data list
           const template = fs.readFileSync("template.html", "utf8");
           const links = JSON.parse(fs.readFileSync("links.json", "utf8"));
           
-          // Create a temporary deployment build directory
+          // Create deployment build directory
           fs.mkdirSync("dist", { recursive: true });
 
           let masterLinksHtml = "";
@@ -43,13 +41,9 @@ jobs:
             const folderPath = `dist/${item.slug}`;
             fs.mkdirSync(folderPath, { recursive: true });
 
-            // Replace all instances of the placeholder with the actual URL
             const customizedHtml = template.replace(/__TARGET_URL__/g, item.url);
-
-            // Write it out as the index.html for this specific folder
             fs.writeFileSync(`${folderPath}/index.html`, customizedHtml);
             
-            // Add to the root landing page list
             masterLinksHtml += `<li><a href="./${item.slug}/">${item.slug}</a></li>\n`;
           });
 
@@ -80,5 +74,5 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: \${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
