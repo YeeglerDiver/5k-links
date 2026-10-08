@@ -22,49 +22,152 @@ jobs:
         with:
           node-version: 18
 
-      - name: Generate 5,000 Pages
+      - name: Generate 5,000 Random Pages
         run: |
           node -e '
           const fs = require("fs");
+          const crypto = require("crypto");
 
-          // Read the base template
           const template = fs.readFileSync("template.html", "utf8");
-
-          // Prepare output directory
           fs.mkdirSync("dist", { recursive: true });
 
-          let masterLinksHtml = "";
           const TOTAL_PAGES = 5000;
+          const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
 
-          // Create site1 through site5000
-          for (let i = 1; i <= TOTAL_PAGES; i++) {
-            const slug = `site${i}`;
+          // Helper to create a random string of a random length (between min and max)
+          function getRandomSlug(minLen = 6, maxLen = 14) {
+            const length = Math.floor(Math.random() * (maxLen - minLen + 1)) + minLen;
+            let slug = "";
+            for (let i = 0; i < length; i++) {
+              slug += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return slug;
+          }
+
+          // Ensure all slugs are unique using a Set
+          const uniqueSlugs = new Set();
+          while (uniqueSlugs.size < TOTAL_PAGES) {
+            uniqueSlugs.add(getRandomSlug(6, 14));
+          }
+
+          let masterLinksHtml = "";
+
+          for (const slug of uniqueSlugs) {
             const folderPath = `dist/${slug}`;
             fs.mkdirSync(folderPath, { recursive: true });
 
-            // Write the exact same template to each folder
             fs.writeFileSync(`${folderPath}/index.html`, template);
 
-            masterLinksHtml += `<li><a href="./${slug}/">${slug}</a></li>\n`;
+            masterLinksHtml += `<a class="card" href="./${slug}/">${slug}</a>\n`;
           }
 
-          // Generate directory index page
           const masterIndexHtml = `<!DOCTYPE html>
-          <html>
+          <html lang="en">
           <head>
             <meta charset="UTF-8">
-            <title>All 5,000 Sites</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Directory Index</title>
             <style>
-              body { font-family: sans-serif; padding: 30px; }
-              ul { column-count: 4; column-gap: 20px; list-style: none; padding: 0; }
-              li { margin: 4px 0; }
-              a { color: #0366d6; text-decoration: none; font-size: 14px; }
-              a:hover { text-decoration: underline; }
+              * { box-sizing: border-box; margin: 0; padding: 0; }
+              body {
+                background: #0d1117;
+                color: #c9d1d9;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                padding: 40px 20px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+              }
+              header {
+                text-align: center;
+                margin-bottom: 28px;
+                max-width: 600px;
+                width: 100%;
+              }
+              h1 {
+                font-size: 28px;
+                font-weight: 700;
+                color: #f0f6fc;
+                margin-bottom: 8px;
+              }
+              p {
+                color: #8b949e;
+                font-size: 14px;
+                margin-bottom: 20px;
+              }
+              .search-box {
+                width: 100%;
+                padding: 12px 18px;
+                border-radius: 8px;
+                border: 1px solid #30363d;
+                background: #161b22;
+                color: #f0f6fc;
+                font-size: 15px;
+                outline: none;
+                transition: border-color 0.2s ease, box-shadow 0.2s ease;
+              }
+              .search-box:focus {
+                border-color: #58a6ff;
+                box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
+              }
+              .grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 10px;
+                width: 100%;
+                max-width: 1200px;
+              }
+              .card {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #161b22;
+                border: 1px solid #30363d;
+                border-radius: 6px;
+                padding: 10px;
+                color: #58a6ff;
+                text-decoration: none;
+                font-size: 13px;
+                font-family: monospace;
+                transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+              }
+              .card:hover {
+                background: #21262d;
+                border-color: #58a6ff;
+                color: #79c0ff;
+                transform: translateY(-2px);
+              }
+              .hidden {
+                display: none !important;
+              }
             </style>
           </head>
           <body>
-            <h1>Generated Sites (1 to 5,000)</h1>
-            <ul>${masterLinksHtml}</ul>
+            <header>
+              <h1>Directory Index</h1>
+              <p>5,000 Randomized Pages</p>
+              <input type="text" id="filter" class="search-box" placeholder="Quick find path..." autocomplete="off" />
+            </header>
+
+            <main class="grid" id="link-grid">
+              ${masterLinksHtml}
+            </main>
+
+            <script>
+              const filter = document.getElementById("filter");
+              const links = document.querySelectorAll(".card");
+
+              filter.addEventListener("input", (e) => {
+                const term = e.target.value.toLowerCase().trim();
+                links.forEach(card => {
+                  if (card.textContent.toLowerCase().includes(term)) {
+                    card.classList.remove("hidden");
+                  } else {
+                    card.classList.add("hidden");
+                  }
+                });
+              });
+            </script>
           </body>
           </html>`;
 
